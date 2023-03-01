@@ -1,0 +1,86 @@
+```{r}
+library(ape)
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(BiocManager)
+install("ggtree")
+library(ggtree)
+```
+*Append new dragons to the nexus dataset*
+```{r}
+DragonNexus <- read.nexus.data("C:/Users/kerri/OneDrive - Queen's University/5th year/Winter/BIOL432/Extra/data/DragonMatrix.nex")
+
+DragonNexusDF <- data.frame(matrix(unlist(DragonNexus), ncol = 78, byrow = T))
+row.names(DragonNexusDF) <- names(DragonNexus)
+
+d1 <- strsplit("10010001000010011000010001111011100000101000000001100010100011110000??10000000", split = "")[[1]] 
+d2 <- strsplit("10011111011100010010000010111010101000000100100000100010000101100001??00011010", split = "")[[1]]
+d3 <- strsplit("10011111011000011000010100111011110000000100000001110001001101100001??10011100", split = "")[[1]]
+
+DragonsNew <- list(d1,d2,d3)
+DragonNexusNew <- c(DragonNexus, DragonsNew)
+names(DragonNexusNew)[78:80] <- c("75Dragon1X", "76Dragon2X", "77Dragon3X")
+
+DragonNexusNewDF <- data.frame(matrix(unlist(DragonNexusNew), ncol = 78, byrow = T))
+row.names(DragonNexusNewDF) <- names(DragonNexusNew)
+
+```
+
+
+*Trait weightings*
+```{r}
+WeightsDat <- read.csv("C:/Users/kerri/OneDrive - Queen's University/5th year/Winter/BIOL432/Extra/data/Weights.csv")
+weights <- paste0(WeightsDat$Weight, collapse = "")
+weights <- strsplit(weights, split = "")[[1]]
+
+weightsnum <- rep(NA, length(weights))
+
+for(i in 1:length(weightsnum)){
+  if(weights[i] %in% LETTERS){
+    weightsnum[i] <- which(LETTERS == weights[i]) + 9
+  } else{
+    weightsnum[i] <- weights[i]
+  }
+}
+
+weightsnum <- as.numeric(weightsnum)
+length(weightsnum)
+
+#multiply weight value by trait vector
+WtDragonNexus <- DragonNexusNew
+
+for(i in 1:length(DragonNexusNew)){
+  RepWeight <- DragonNexusNew[[i]] == 1
+  WtDragonNexus[[i]][RepWeight] <- weightsnum[RepWeight]
+  RepWeight <- NA
+}
+
+```
+
+Dragon 1 <https://cdn.pixabay.com/photo/2023/01/07/09/20/ai-generated-7702855__340.jpg>
+Dragon 2 <https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/4a7e0b9d-26a5-4d59-b0e9-4ca9f3724ff2/drpuu9-c8ae732f-0ed6-45e5-b738-5b1d01966b08.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzRhN2UwYjlkLTI2YTUtNGQ1OS1iMGU5LTRjYTlmMzcyNGZmMlwvZHJwdXU5LWM4YWU3MzJmLTBlZDYtNDVlNS1iNzM4LTViMWQwMTk2NmIwOC5wbmcifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6ZmlsZS5kb3dubG9hZCJdfQ.MlWASyv-iD796tmBex_Trmt-4R3KIvWXQmodi9EE6-w>
+Dragon 3 <https://static.wikia.nocookie.net/seraphina/images/b/b2/Dragonseraphina.jpg/revision/latest/scale-to-width-down/1200?cb=20160103194957>
+
+*Phylogeny*
+```{r fig.height=9, fig.width=13, fig.cap="Figure 1. Phylogeny showing the relatedness of dragons and three other species from different countries (n = 78). The coloured boxes represents the position of each added dragon, as well as the overall clade they belong to."}
+WtDragonNexusDF <- data.frame(matrix(unlist(WtDragonNexus), ncol = 78, byrow = T))
+row.names(WtDragonNexusDF) <- names(WtDragonNexus)
+WtDragonDist <- dist(WtDragonNexusDF, method = 'euclidean')
+
+WtDragonTreeNJ <- nj(WtDragonDist)
+
+ggtree(WtDragonTreeNJ, layout = "rectangular") + 
+  geom_tiplab(size = 3) + 
+  geom_hilight(node = 78, fill = "red")+ 
+  geom_hilight(node = 79, fill = "green") +
+  geom_hilight(node = 80, fill = "blue") +
+  geom_hilight(node = 145, fill = "grey")
+
+```
+
+*Data interpretation*
+
+The added dragons have fairly similar traits with only a few differences between them. All three added dragons form their own clade and have diverged from dragobs from other countries. Dragon 2 and dragon 3 are the closest of the three suggesting that they originate from the same country. Dragon 1 isn't very different from the other two dragons so it's possible that it also originates from the same country, but perhaps a distant region. 
+
+
